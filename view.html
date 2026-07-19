@@ -2,82 +2,49 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>본문 보기</title>
+    <title>본문</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="bg-gray-50">
-
-<div class="max-w-3xl mx-auto p-6">
-    <!-- 게시글 영역 -->
-    <div id="post-view" class="bg-white p-8 rounded-lg shadow-md mb-6">
-        <h1 id="post-title" class="text-3xl font-bold mb-4"></h1>
-        <div class="text-gray-600 mb-6" id="post-meta"></div>
-        <div id="post-content" class="mb-8 whitespace-pre-line"></div>
-        <div class="flex gap-2">
-            <button onclick="location.href='index.html'" class="px-4 py-2 bg-gray-200 rounded">목록</button>
-            <button onclick="deletePost()" class="px-4 py-2 bg-red-500 text-white rounded">삭제</button>
-        </div>
-    </div>
-
-    <!-- 댓글 영역 -->
-    <div class="bg-white p-6 rounded-lg shadow-md">
-        <h2 class="text-xl font-bold mb-4">댓글</h2>
-        <div id="comments-list" class="space-y-4 mb-6"></div>
-        <div class="space-y-2">
-            <input type="text" id="c-nickname" placeholder="닉네임" class="w-full p-2 border rounded">
-            <input type="password" id="c-password" placeholder="비밀번호" class="w-full p-2 border rounded">
-            <textarea id="c-content" placeholder="댓글 내용" class="w-full p-2 border rounded"></textarea>
-            <button onclick="addComment()" class="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700">댓글 등록</button>
-        </div>
+<body class="bg-gray-50 p-6">
+<div class="max-w-3xl mx-auto bg-white p-8 rounded-lg shadow-md">
+    <h1 id="title" class="text-3xl font-bold mb-4"></h1>
+    <div id="meta" class="text-gray-600 mb-6"></div>
+    <div id="content" class="mb-8 whitespace-pre-line"></div>
+    <div id="file-link" class="mb-6"></div>
+    <button onclick="deletePost()" class="px-4 py-2 bg-red-500 text-white rounded">삭제</button>
+    <div class="mt-8 border-t pt-4">
+        <h2 class="font-bold mb-4">댓글</h2>
+        <div id="comments" class="mb-4"></div>
+        <input type="text" id="c-nick" placeholder="닉네임" class="block w-full p-2 border mb-2">
+        <input type="password" id="c-pw" placeholder="비밀번호" class="block w-full p-2 border mb-2">
+        <textarea id="c-content" placeholder="댓글" class="block w-full p-2 border mb-2"></textarea>
+        <button onclick="addComment()" class="py-2 px-4 bg-blue-600 text-white rounded">댓글 등록</button>
     </div>
 </div>
-
 <script>
-    const SUPABASE_URL = 'https://gbgazkerfzjosdmofbbs.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiZ2F6a2VyZnpqb3NkbW9mYmJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyNzg1MzksImV4cCI6MjA5OTg1NDUzOX0.ZfNl_gkJhb5hiyRGPLxf95VwAg6dgsK7_KZVDRIxxo4';
-    const sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    const postId = new URLSearchParams(window.location.search).get('id');
-
-    async function loadData() {
-        // 게시글 조회
-        const { data: post } = await sbClient.from('posts').select('*').eq('id', postId).single();
-        document.getElementById('post-title').innerText = post.title;
-        document.getElementById('post-meta').innerText = `${post.nickname} | ${new Date(post.created_at).toLocaleString()} | 조회수 ${post.views}`;
-        document.getElementById('post-content').innerText = post.content;
-
-        // 댓글 조회
-        const { data: comments } = await sbClient.from('comments').select('*').eq('post_id', postId).order('created_at', { ascending: true });
-        document.getElementById('comments-list').innerHTML = comments.map(c => `
-            <div class="border-b pb-2">
-                <div class="font-bold">${c.nickname}</div>
-                <div class="text-gray-700">${c.content}</div>
-            </div>
-        `).join('');
+    const sbClient = supabase.createClient('https://gbgazkerfzjosdmofbbs.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiZ2F6a2VyZnpqb3NkbW9mYmJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyNzg1MzksImV4cCI6MjA5OTg1NDUzOX0.ZfNl_gkJhb5hiyRGPLxf95VwAg6dgsK7_KZVDRIxxo4');
+    const pid = new URLSearchParams(window.location.search).get('id');
+    async function load() {
+        const { data: p } = await sbClient.from('posts').select('*').eq('id', pid).single();
+        document.getElementById('title').innerText = p.title;
+        document.getElementById('meta').innerText = `${p.nickname} | ${p.views} 조회`;
+        document.getElementById('content').innerText = p.content;
+        if(p.file_url) document.getElementById('file-link').innerHTML = `<a href="${p.file_url}" target="_blank" class="text-blue-600 underline">📎 파일 다운로드</a>`;
+        const { data: cs } = await sbClient.from('comments').select('*').eq('post_id', pid);
+        document.getElementById('comments').innerHTML = cs.map(c => `<div class="border-b py-2"><b>${c.nickname}</b>: ${c.content}</div>`).join('');
     }
-
     async function addComment() {
-        const nickname = document.getElementById('c-nickname').value;
-        const password = document.getElementById('c-password').value;
-        const content = document.getElementById('c-content').value;
-        await sbClient.from('comments').insert([{ post_id: postId, nickname, password, content }]);
+        await sbClient.from('comments').insert([{ post_id: pid, nickname: document.getElementById('c-nick').value, password: document.getElementById('c-pw').value, content: document.getElementById('c-content').value }]);
         location.reload();
     }
-
     async function deletePost() {
-        const pw = prompt('비밀번호를 입력하세요.');
-        const { data: post } = await sbClient.from('posts').select('password').eq('id', postId).single();
-        if (post.password === pw) {
-            await sbClient.from('posts').delete().eq('id', postId);
-            alert('삭제되었습니다.');
-            location.href = 'index.html';
-        } else {
-            alert('비밀번호가 틀렸습니다.');
-        }
+        const pw = prompt('비밀번호');
+        const { data: p } = await sbClient.from('posts').select('password').eq('id', pid).single();
+        if(p.password === pw) { await sbClient.from('posts').delete().eq('id', pid); location.href='index.html'; }
+        else alert('비밀번호 틀림');
     }
-
-    loadData();
+    load();
 </script>
 </body>
 </html>
