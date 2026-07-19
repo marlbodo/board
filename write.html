@@ -7,30 +7,58 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-gray-50 p-6">
-<div class="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow-md space-y-4">
-    <input type="text" id="title" placeholder="제목" class="w-full p-3 border rounded">
+<div class="max-w-2xl mx-auto bg-white p-6 rounded shadow space-y-4">
+    <input type="text" id="title" placeholder="제목" class="w-full p-2 border rounded">
     <div class="flex gap-4">
-        <input type="text" id="nickname" placeholder="작성자" class="w-1/2 p-3 border rounded">
-        <input type="password" id="password" placeholder="비밀번호" class="w-1/2 p-3 border rounded">
+        <input type="text" id="nick" placeholder="닉네임" class="w-1/2 p-2 border rounded">
+        <input type="password" id="pw" placeholder="비밀번호" class="w-1/2 p-2 border rounded">
     </div>
-    <textarea id="content" placeholder="내용" rows="10" class="w-full p-3 border rounded"></textarea>
-    <input type="file" id="file-input" class="w-full p-3 border rounded">
-    <button onclick="savePost()" class="w-full py-3 bg-blue-600 text-white rounded">등록</button>
+    <textarea id="content" placeholder="내용" rows="10" class="w-full p-2 border rounded"></textarea>
+    
+    <!-- 파일 첨부 인풋 -->
+    <div class="border-t pt-4">
+        <label class="block text-sm font-bold mb-2">첨부파일</label>
+        <input type="file" id="file" class="w-full">
+    </div>
+    
+    <button onclick="save()" class="w-full py-3 bg-blue-600 text-white rounded hover:bg-blue-700">등록</button>
 </div>
+
 <script>
-    const sbClient = supabase.createClient('https://gbgazkerfzjosdmofbbs.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiZ2F6a2VyZnpqb3NkbW9mYmJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyNzg1MzksImV4cCI6MjA5OTg1NDUzOX0.ZfNl_gkJhb5hiyRGPLxf95VwAg6dgsK7_KZVDRIxxo4');
-    async function savePost() {
-        const file = document.getElementById('file-input').files[0];
-        let fileUrl = null;
+    const sb = supabase.createClient('https://gbgazkerfzjosdmofbbs.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiZ2F6a2VyZnpqb3NkbW9mYmJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyNzg1MzksImV4cCI6MjA5OTg1NDUzOX0.ZfNl_gkJhb5hiyRGPLxf95VwAg6dgsK7_KZVDRIxxo4');
+    
+    async function save() {
+        const fileInput = document.getElementById('file');
+        const file = fileInput.files[0];
+        let url = null;
+
+        // 파일이 선택되었을 경우 Supabase Storage에 업로드
         if (file) {
-            const { data } = await sbClient.storage.from('uploads').upload(`${Date.now()}_${file.name}`, file);
-            fileUrl = sbClient.storage.from('uploads').getPublicUrl(data.path).data.publicUrl;
+            const fileName = `${Date.now()}_${file.name}`;
+            const { data, error } = await sb.storage.from('uploads').upload(fileName, file);
+            
+            if (error) {
+                alert('파일 업로드 실패: ' + error.message);
+                return;
+            }
+            url = sb.storage.from('uploads').getPublicUrl(fileName).data.publicUrl;
         }
-        await sbClient.from('posts').insert([{ 
-            board_id: 1, title: document.getElementById('title').value, nickname: document.getElementById('nickname').value,
-            password: document.getElementById('password').value, content: document.getElementById('content').value, file_url: fileUrl 
+
+        // 게시글 데이터 삽입
+        const { error } = await sb.from('posts').insert([{ 
+            board_id: 1, 
+            title: document.getElementById('title').value, 
+            nickname: document.getElementById('nick').value, 
+            password: document.getElementById('pw').value, 
+            content: document.getElementById('content').value, 
+            file_url: url 
         }]);
-        location.href = 'index.html';
+
+        if (error) {
+            alert('글 등록 실패: ' + error.message);
+        } else {
+            location.href = 'index.html';
+        }
     }
 </script>
 </body>
