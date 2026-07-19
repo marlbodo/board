@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>글쓰기</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-50">
+
+<div class="max-w-2xl mx-auto p-6">
+    <h1 class="text-2xl font-bold text-gray-800 mb-6">글쓰기</h1>
+    
+    <div class="bg-white p-6 rounded-lg shadow-md space-y-4">
+        <input type="text" id="title" placeholder="제목" class="w-full p-3 border rounded-lg">
+        <div class="flex gap-4">
+            <input type="text" id="nickname" placeholder="작성자" class="w-1/2 p-3 border rounded-lg">
+            <input type="password" id="password" placeholder="비밀번호" class="w-1/2 p-3 border rounded-lg">
+        </div>
+        <textarea id="content" placeholder="내용" rows="10" class="w-full p-3 border rounded-lg"></textarea>
+        
+        <div class="flex justify-end gap-2">
+            <button onclick="location.href='index.html'" class="px-4 py-2 bg-gray-200 rounded-lg">취소</button>
+            <button onclick="savePost()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">등록</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const SUPABASE_URL = 'https://gbgazkerfzjosdmofbbs.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiZ2F6a2VyZnpqb3NkbW9mYmJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyNzg1MzksImV4cCI6MjA5OTg1NDUzOX0.ZfNl_gkJhb5hiyRGPLxf95VwAg6dgsK7_KZVDRIxxo4';
+    const sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    async function savePost() {
+        const title = document.getElementById('title').value;
+        const nickname = document.getElementById('nickname').value;
+        const password = document.getElementById('password').value;
+        const content = document.getElementById('content').value;
+
+        if (!title || !nickname || !password || !content) {
+            alert('모든 항목을 입력해주세요.');
+            return;
+        }
+
+        const { data, error } = await sbClient
+            .from('posts')
+            .insert([{ 
+                board_id: 1, // 자유게시판 ID
+                title, 
+                nickname, 
+                password, 
+                content,
+                views: 0 
+            }]);
+
+        if (error) {
+            console.error(error);
+            alert('글 등록에 실패했습니다.');
+        } else {
+            alert('글이 등록되었습니다.');
+            location.href = 'index.html';
+        }
+    }
+</script>
+
+</body>
+</html>
